@@ -53,13 +53,34 @@ const fetchPage = (p) => {
 					    map_info: item.ext.map_info // 坐标
 					}
 			        const citys = new Citys(finalData)
-			        citys.save(function (err, data) {
-			            if (err) {
-			                console.log(err)
-			                return
-			            }
-			            console.log(data)
-			        })
+			        citys.save().then(function(data){
+			        	// console.log(data);
+			        	// 获取对应城市页面
+			        	if(item.surl === 'beijing'){
+				        	const cityUrl = 'https://lvyou.baidu.com/' + item.surl + '?&request_id=' + parsedData.data.request_id;
+				        	https.get(cityUrl, (res) => {
+								const { statusCode } = res;
+								let error;
+								if(statusCode !== 200){
+									error = new Error('请求失败。\n' + `状态码：${statusCode}`);
+								}
+								if(error){
+									console.log(error.message);
+									res.resume();
+									return;
+								}
+								res.setEncoding('utf8');		
+								let html = '';
+								res.on('data', (chunk) => { html += chunk; });
+								res.on('end', function(){
+									var $ = cheerio.load(html);
+									console.log($('.main-desc-p').text())
+								});	        		
+				        	})
+			        	}
+			        }).catch(function(err){
+			        	console.log(err)
+			        });
 				})
 			} catch (e) {
 				console.error(e.message);
