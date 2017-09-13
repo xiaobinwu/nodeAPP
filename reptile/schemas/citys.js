@@ -15,7 +15,10 @@ const CitysSchema = new mongoose.Schema({
     remark_count: String, // 点评数
     impression: String, // 城市简述
     more_desc: String, // 城市详述
-    map_info: String // 坐标
+    map_info: String,// 坐标
+    season: String, //适合游玩季节
+    createTime: { type: Date, default: Date.now }, //创建时间
+    updateTime: { type: Date, default: Date.now } //更新时间
 })
 
 module.exports = CitysSchema
