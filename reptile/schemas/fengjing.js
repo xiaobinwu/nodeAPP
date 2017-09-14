@@ -13,4 +13,10 @@ const FengjingSchema = new mongoose.Schema({
     updateTime: { type: Date, default: Date.now } //更新时间
 })
 
+// 捕捉当索引建立失败
+FengjingSchema.set('emitIndexErrors', true)
+
+// 禁止索引自动调用ensureindex(禁止自动创建索引)
+FengjingSchema.set('autoIndex', false)
+
 module.exports = FengjingSchema
