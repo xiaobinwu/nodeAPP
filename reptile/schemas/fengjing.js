@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const FengjingSchema = new mongoose.Schema({
     thumbUrl: String, // 缩略图
     url: String, // 原图
-    city_id: String, //城市Id
+    city_id: { type: String, index: true } , //城市Id
     source: String, // 来源
     page: Number, // 所属页数
     city_name: String, //城市

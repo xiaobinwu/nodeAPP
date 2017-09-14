@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const JingdianSchema = new mongoose.Schema({
     county: String, // 国家名
     county_id: String, // 国家id，后期可以多国家
-    city_id: String, //城市id
+    city_id: { type: String, index: true } , //城市Id
     city_name: String, // 城市名
     en_sname: String, //城市英文名
     cover: String, // 景点图片
