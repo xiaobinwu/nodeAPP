@@ -1,6 +1,7 @@
 // 引入mongoose
 const mongoose = require('mongoose')
 // 旅游城市模型
+const Schema = mongoose.Schema
 const CitysSchema = new mongoose.Schema({
     county: String, // 国家名
     county_id: String, // 国家id，后期可以多国家
@@ -14,9 +15,16 @@ const CitysSchema = new mongoose.Schema({
     avg_remark_score: String, // 评分
     remark_count: String, // 点评数
     impression: String, // 城市简述
+    abs_desc: String,
     more_desc: String, // 城市详述
     map_info: String,// 坐标
-    season: String, //适合游玩季节
+    best_time: [], //适合游玩的时间
+    best_time_more_desc: { type: String, default: '' }, //适合游玩的时间更多描述
+    best_time_simple_desc: { type: String, default: '' }, //适合游玩的时间简单描述
+    best_play_days: String, // 建议游玩多少天
+    foods: [Schema.Types.Mixed], // 美食
+    activitys: [Schema.Types.Mixed], // 娱乐活动
+    business: [Schema.Types.Mixed], // 商业中心
     createTime: { type: Date, default: Date.now }, //创建时间
     updateTime: { type: Date, default: Date.now } //更新时间
 })

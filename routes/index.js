@@ -13,7 +13,7 @@ global.db.once('open', function () {
 
 const Citys = require('../reptile/models/citys')
 const Fengjing = require('../reptile/models/fengjing')
-
+const Jingdian = require('../reptile/models/jingdian')
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -22,7 +22,8 @@ router.get('/', function(req, res, next) {
 	    if (err) {
 	        console.log(err)
 	    } else {
-	    	console.log(message)
+			// console.log(JSON.parse(JSON.stringify(message)))
+			console.log(message[0].business)
 	    }
 	})
 
@@ -30,7 +31,15 @@ router.get('/', function(req, res, next) {
 	    if (err) {
 	        console.log(err)
 	    } else {
-	    	console.log(message)
+			// console.log(JSON.parse(JSON.stringify(message)))
+	    }
+	})
+
+	Jingdian.find().limit(1).exec(function (err, message) {
+	    if (err) {
+	        console.log(err)
+	    } else {
+	    	// console.log(JSON.parse(JSON.stringify(message)))
 	    }
 	})
 
