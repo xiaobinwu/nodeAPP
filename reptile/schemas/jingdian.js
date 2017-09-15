@@ -1,6 +1,7 @@
 // 引入mongoose
 const mongoose = require('mongoose')
 // 城市旅游景点模型
+const Schema = mongoose.Schema
 const JingdianSchema = new mongoose.Schema({
     county: String, // 国家名
     county_id: String, // 国家id，后期可以多国家
@@ -8,7 +9,7 @@ const JingdianSchema = new mongoose.Schema({
     city_name: String, // 城市名
     en_sname: String, //城市英文名
     cover: String, // 景点图片
-    pics: [], // 图片集
+    pics: [Schema.Types.Mixed], // 图片集
     ambiguity_sname: String, //景点名字
     surl: String, //景点标识
     remark_count: String, // 点评数
@@ -26,7 +27,7 @@ const JingdianSchema = new mongoose.Schema({
 // 捕捉当索引建立失败
 JingdianSchema.set('emitIndexErrors', true)
 
-// 禁止索引自动调用ensureindex(禁止自动创建索引)
+// 禁止索引自动调用ensureindex
 JingdianSchema.set('autoIndex', false)
 
 module.exports = JingdianSchema

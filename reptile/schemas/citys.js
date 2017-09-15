@@ -9,6 +9,7 @@ const CitysSchema = new mongoose.Schema({
     city_name: String, // 城市名
     en_sname: String, //城市英文名
     cover: String, // 城市图片
+    pics: [Schema.Types.Mixed], // 图片集
     surl: String, // 城市标志，用于抓取对应城市景点
     avg_cost: String, // 人均花费
     level: String, //景区登记

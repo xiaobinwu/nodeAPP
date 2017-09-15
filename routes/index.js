@@ -22,8 +22,8 @@ router.get('/', function(req, res, next) {
 	    if (err) {
 	        console.log(err)
 	    } else {
-			// console.log(JSON.parse(JSON.stringify(message)))
-			console.log(message[0].business)
+			console.log(JSON.parse(JSON.stringify(message)))
+			// console.log(message[0].business)
 	    }
 	})
 
@@ -31,7 +31,7 @@ router.get('/', function(req, res, next) {
 	    if (err) {
 	        console.log(err)
 	    } else {
-			// console.log(JSON.parse(JSON.stringify(message)))
+			console.log(JSON.parse(JSON.stringify(message)))
 	    }
 	})
 
@@ -39,7 +39,7 @@ router.get('/', function(req, res, next) {
 	    if (err) {
 	        console.log(err)
 	    } else {
-	    	// console.log(JSON.parse(JSON.stringify(message)))
+	    	console.log(JSON.parse(JSON.stringify(message)))
 	    }
 	})
 

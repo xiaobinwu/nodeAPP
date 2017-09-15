@@ -110,33 +110,66 @@ const getSingleCityExtraMessage = (item, parsedData) =>{
 		const url = hostName + item.surl + '?&request_id=' + parsedData.data.request_id;
 		httpRequest(url, function(html){
 			const $ = cheerio.load(html);
-			// 页数
-			// const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
-			// const AttractionsPages = Math.ceil(Number($('.unmis-more span').text())/18);
 
-			// 测试
-			const ImgPages = 1;
-			const AttractionsPages = 1;
+			const pics= [];
+			$(".pic-slider").find('.pic-item a').each(function(item){
+				const $img = $(this).find('img');
+				pics.push({
+					href: $(this).attr('href'),
+					src: $img.attr('src'),
+					alt: $img.attr('alt'),
+					width: $img.attr('width'),
+					height: $img.attr('height')
+				});
+			});
+			Citys.findByIdAndUpdate(item._id, {
+				$set: { 
+					pics: pics,
+					updateTime: new Date() 
+				}
+			}).then(function(data){
+				console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
+				// 页数
+				// const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
+				// const AttractionsPages = Math.ceil(Number($('.unmis-more span').text())/18);
 
-			getCityFenjing(ImgPages, item)(1);
-			getAttractionsCity(AttractionsPages, item)(1);	
+				// 测试
+				const ImgPages = 1;
+				const AttractionsPages = 1;
+				// 获取城市风景图
+				getFenjing(ImgPages, item)(1);
+				getAttractionsCity(AttractionsPages, item)(1);	
+
+			}).catch(function(err){
+				console.log(err)
+			});			
 		});
 	}
 }
+
+/**
+ * 计算获取风景图片的pn参数
+ * @param {any} p (页数)
+ */
+const calculatePn = (p) => {
+	return (p-1)*24;
+}
+
 
 /**
  * 
  * 获取城市风景图片
  * @param {any} count (图片总页数数)
  * @param {any} data (对应城市文档数据)
+ * @param {any} name (是否为为景点的风景图)
  * @param {any} p (页数)
  */
-const getCityFenjing = (count, data) => {
-	const cityName = data.city_name;
+const getFenjing = (count, data, name) => {
+	const cityName = name || data.city_name;
 	return function(p){
 		const caller = arguments.callee;
 		if(p > count) { console.log(cityName + '所有风景图数据保存成功'); return; }
-		const url = hostName + data.surl + '/fengjing/?pn=' + p;
+		const url = hostName + data.surl + '/fengjing/?pn=' + calculatePn(p);
 		httpRequest(url, function(html){
 			const $ = cheerio.load(html);
 			const finalDataArr = [];
@@ -169,7 +202,9 @@ const getCityFenjing = (count, data) => {
 
 /**
  * 获取城市景点详细信息
- * 
+  * @param {any} count (图片总页数数)
+ * @param {any} data (对应城市文档数据)
+ * @param {any} p (页数)
  */
 const getAttractionsCity = (count, data) => {
 	const cityName = data.city_name;
@@ -208,7 +243,6 @@ const getAttractionsCity = (count, data) => {
 					city_name: data.city_name, // 城市名
 					en_sname: data.en_sname, //城市英文名
 					cover: item.cover.full_url, // 景点图片
-					pics: [], // 图片集
 					ambiguity_sname: item.ambiguity_sname, //景点名字
 					surl: item.surl, //景点标识
 					remark_count: item.remark_count, // 点评数
@@ -223,6 +257,9 @@ const getAttractionsCity = (count, data) => {
 				finalDataArr.push(finalData);
 			});
 			Jingdian.insertMany(finalDataArr).then(function(data){
+				data.forEach(function(item){
+					getSingleJingdianExtraMessage(item);
+				});
 				console.log(cityName + '---第'+ p + '页景点数据保存成功');
 				caller(++p);
 			}).catch(function(err){
@@ -230,6 +267,46 @@ const getAttractionsCity = (count, data) => {
 			});
 		});
 	}
+}
+
+/**
+ * 获取对应景点额外数据
+ * @param {any} item 
+ */
+const getSingleJingdianExtraMessage =(item) =>{
+	const url = hostName + item.surl + '?innerfr_pg=destinationDetailPg&accur_thirdpar=dasou_citycard';
+	httpRequest(url, function(html){
+		const $ = cheerio.load(html);
+		// 图片集遍历
+		const pics= [];
+		$(".pic-slider").find('.pic-item a').each(function(item){
+			const $img = $(this).find('img');
+			pics.push({
+				href: $(this).attr('href'),
+				src: $img.attr('src'),
+				alt: $img.attr('alt'),
+				width: $img.attr('width'),
+				height: $img.attr('height')
+			});
+		});
+		Jingdian.findByIdAndUpdate(item._id, {
+			$set: { 
+				pics: pics,
+				updateTime: new Date() 
+			}
+		}).then(function(data){
+			console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
+			// 页数
+			// const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
+			// 测试
+			const ImgPages = 1;
+			// 获取城市风景图
+			getFenjing(ImgPages, item, item.city_name + '-' + item.ambiguity_sname)(1);
+
+		}).catch(function(err){
+			console.log(err)
+		});
+	});
 }
 
 
