@@ -3,6 +3,8 @@ const https = require('https');
 
 // 引入mongoose
 let mongoose = require('mongoose');
+//开启日志
+mongoose.set('debug', true);
 // 用于异步回调
 mongoose.Promise = require('bluebird');
 global.db = mongoose.connect('mongodb://localhost:27017/lvyou', { useMongoClient: true });
