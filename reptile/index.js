@@ -5,7 +5,7 @@ const https = require('https');
 let mongoose = require('mongoose');
 let Promise;
 //开启日志
-mongoose.set('debug', true);
+// mongoose.set('debug', true);
 // 用于异步回调
 mongoose.Promise = Promise = require('bluebird');
 global.db = mongoose.connect('mongodb://localhost:27017/lvyou', { useMongoClient: true });
@@ -244,7 +244,6 @@ const getAttractionsCity = (count, data) => {
 					return Promise.resolve();
 				}
 			}
-
 			saveMissingData().then(function(){
 				let finalDataArr = [];
 				parsedData.data.scene_list.forEach((item) => {
