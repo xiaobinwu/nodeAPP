@@ -1,6 +1,8 @@
 const cheerio = require('cheerio');
 const https = require('https');
 
+const rp = require('request-promise');
+
 // 引入mongoose
 let mongoose = require('mongoose');
 let Promise;
@@ -23,6 +25,11 @@ const Jingdian = require('./models/jingdian');
  * @param {any} callback 
  */
 const httpRequest = (url, callback) => {
+	// rp(url).then(function(rawData){
+	// 	callback(rawData)
+	// }).catch(function(err){
+	// 	return Promise.reject(err);
+	// });
 	https.get(url, (res) => {
 		const { statusCode } = res;
 		let error;
@@ -272,10 +279,10 @@ const getAttractionsCity = (count, data) => {
 
 			}).then(function(data){
 				console.log(cityName + '---第'+ p + '页景点数据保存成功');
-				// return Promise.all(data.map(function(item){
-				// 	getSingleJingdianExtraMessage(item);
-				// }));
-				return Promise.resolve();
+				return Promise.all(data.map(function(item){
+					getSingleJingdianExtraMessage(item);
+				}));
+				// return Promise.resolve();
 			}).then(function(){
 				caller(++p);
 			}).catch(function(err){
@@ -318,7 +325,7 @@ const getSingleJingdianExtraMessage =(item) =>{
 			// 测试
 			const ImgPages = 1;
 			// 获取城市风景图
-			return Promise.all([getFenjing(ImgPages, item, item.city_name + '-' + item.ambiguity_sname)(1)]);
+			return getFenjing(ImgPages, item, item.city_name + '-' + item.ambiguity_sname)(1);
 		}).catch(function(err){
 			return Promise.reject(err);
 		});
