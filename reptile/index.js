@@ -63,7 +63,7 @@ const httpRequest = (url, callback) => {
  * @param {number} timeout (延时时间-节流)
  * @param {number} p (城市列表页数)
  */
-const fetchPage = (total, timeout=3000) => {
+const fetchPage = (total, timeout=1800) => {
 	return function(p) {
 		const caller = arguments.callee;
 		if(p > total) { console.log('所有数据爬取成功！'); return; }
@@ -335,5 +335,5 @@ const getSingleJingdianExtraMessage =(item) =>{
 
 global.db.once('open', function () {
 	console.log('Mongodb running');
-	fetchPage(2)(1);
+	fetchPage(78)(1);
 });
