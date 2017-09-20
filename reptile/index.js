@@ -1,7 +1,7 @@
 const cheerio = require('cheerio');
 const https = require('https');
 
-const rp = require('request-promise');
+// const rp = require('request-promise');
 
 // 引入mongoose
 let mongoose = require('mongoose');
@@ -25,36 +25,35 @@ const Jingdian = require('./models/jingdian');
  * @param {any} callback 
  */
 const httpRequest = (url, callback) => {
-	rp(url).then(function(rawData){
-		return callback(rawData)
-	}).catch(function(err){
-		return Promise.reject(err);
-		// console.error(err);
-	});
-	// https.get(url, (res) => {
-	// 	const { statusCode } = res;
-	// 	let error;
-	// 	if(statusCode !== 200){
-	// 		error = new Error('请求失败。\n' + `状态码：${statusCode}`);
-	// 	}
-	// 	if(error){
-	// 		console.log(error.message);
-	// 		res.resume();
-	// 		return;
-	// 	}
-	// 	res.setEncoding('utf8');
-	// 	let rawData = '';
-	// 	res.on('data', (chunk) => { rawData += chunk; });
-	// 	res.on('end', () => {
-	// 		try {
-	// 			callback(rawData);
-	// 		} catch (e) {
-	// 			console.error(e.message);
-	// 		}
-	// 	});
-	// }).on('error', (e) => {
-	// 	 console.error(e);
+	// rp(url).then(function(rawData){
+	// 	callback(rawData)
+	// }).catch(function(err){
+	// 	return Promise.reject(err);
 	// });
+	https.get(url, (res) => {
+		const { statusCode } = res;
+		let error;
+		if(statusCode !== 200){
+			error = new Error('请求失败。\n' + `状态码：${statusCode}`);
+		}
+		if(error){
+			console.log(error.message);
+			res.resume();
+			return;
+		}
+		res.setEncoding('utf8');
+		let rawData = '';
+		res.on('data', (chunk) => { rawData += chunk; });
+		res.on('end', () => {
+			try {
+				callback(rawData);
+			} catch (e) {
+				console.error(e.message);
+			}
+		});
+	}).on('error', (e) => {
+		 console.error(e);
+	});
 }
 
 /**
@@ -94,17 +93,17 @@ const fetchPage = (total, timeout=3000) => {
 				}
 				finalDataArr.push(finalData);
 			});
-			return Citys.insertMany(finalDataArr);
-		}).then(function(data){
-			console.log('城市列表---第' + p + '页数据保存成功');
-			return Promise.all(data.map(function(item){
-				getSingleCityExtraMessage(item, parsedData);
-			}));
-		}).then(function(){
-			//延迟执行，避免频繁请求接口
-			setTimeout(function(){ caller(++p); }, timeout);
-		}).catch(function(err){
-			console.log(err);
+			Citys.insertMany(finalDataArr).then(function(data){
+				console.log('城市列表---第' + p + '页数据保存成功');
+				return Promise.all(data.map(function(item){
+					getSingleCityExtraMessage(item, parsedData);
+				}));
+			}).then(function(){
+				//延迟执行，避免频繁请求接口
+				setTimeout(function(){ caller(++p); }, timeout);
+			}).catch(function(err){
+				console.log(err);
+			});
 		});
 	}
 }
@@ -117,7 +116,7 @@ const fetchPage = (total, timeout=3000) => {
 const getSingleCityExtraMessage = (item, parsedData) =>{
 	// console.log(data);
 	// 获取对应城市页面
-	if(item.surl === 'beijing'){ // 测试一个城市
+	// if(item.surl === 'beijing'){ // 测试一个城市
 		const url = hostName + item.surl + '?&request_id=' + parsedData.data.request_id;
 		httpRequest(url, function(html){
 			const $ = cheerio.load(html);
@@ -133,32 +132,30 @@ const getSingleCityExtraMessage = (item, parsedData) =>{
 					height: $img.attr('height')
 				});
 			});
-			return Citys.findByIdAndUpdate(item._id, {
+			Citys.findByIdAndUpdate(item._id, {
 				$set: { 
 					pics: pics,
 					updateTime: new Date() 
 				}
-			})		
-		}).then(function(data){
-			console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
-			// 页数
-			// const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
-			// const AttractionsPages = Math.ceil(Number($('.unmis-more span').text())/18);
+			}).then(function(data){
+				console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
+				// 页数
+				const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
+				const AttractionsPages = Math.ceil(Number($('.unmis-more span').text())/18);
 
-			// 测试
-			const ImgPages = 1;
-			// 获取城市风景图
-			return getFenjing(ImgPages, item)(1);
+				// 测试
+				// const ImgPages = 1;
+				// const AttractionsPages = 1;
+				// 获取城市风景图
+				return Promise.all([getFenjing(ImgPages, item)(1), getAttractionsCity(AttractionsPages, item)(1)]);
 
-		}).then(function(){
-			const AttractionsPages = 1;
-			return  getAttractionsCity(AttractionsPages, item)(1);
-		}).catch(function(err){
-			return Promise.reject(err)
-		});	
-	} else {
-		return Promise.resolve(); //待删
-	}
+			}).catch(function(err){
+				return Promise.reject(err)
+			});			
+		});
+	// } else {
+	// 	return Promise.resolve(); //待删
+	// }
 }
 
 /**
@@ -203,14 +200,14 @@ const getFenjing = (count, data, name) => {
 				finalDataArr.push(fengjing);		
 			});
 
-			return Fengjing.insertMany(finalDataArr)
-		}).then(function(data){
-			console.log(cityName + '---第' + p + '页风景图数据保存成功');
-			return Promise.resolve();
-		}).then(function(){
-			caller(++p);
-		}).catch(function(err){
-			return Promise.reject(err);
+			Fengjing.insertMany(finalDataArr).then(function(data){
+				console.log(cityName + '---第' + p + '页风景图数据保存成功');
+				return Promise.resolve();
+			}).then(function(){
+				caller(++p)
+			}).catch(function(err){
+				return Promise.reject(err);
+			});
 		});
 	}
 }
@@ -280,19 +277,19 @@ const getAttractionsCity = (count, data) => {
 
 				return Jingdian.insertMany(finalDataArr);
 
+			}).then(function(data){
+				console.log(cityName + '---第'+ p + '页景点数据保存成功');
+				return Promise.all(data.map(function(item){
+					getSingleJingdianExtraMessage(item);
+				}));
+				// return Promise.resolve();
+			}).then(function(){
+				caller(++p);
 			}).catch(function(err){
 				return Promise.reject(err);
 			});
 
-		}).then(function(data){
-			console.log(cityName + '---第'+ p + '页景点数据保存成功');
-			return Promise.all(data.map(function(item){
-				getSingleJingdianExtraMessage(item);
-			}));
-			// return Promise.resolve();
-		}).then(function(){
-			caller(++p);
-		})
+		});
 	}
 }
 
@@ -316,22 +313,22 @@ const getSingleJingdianExtraMessage =(item) =>{
 				height: $img.attr('height')
 			});
 		});
-		return Jingdian.findByIdAndUpdate(item._id, {
+		Jingdian.findByIdAndUpdate(item._id, {
 			$set: { 
 				pics: pics,
 				updateTime: new Date() 
 			}
+		}).then(function(data){
+			console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
+			// 页数
+			const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
+			// 测试
+			// const ImgPages = 1;
+			// 获取城市风景图
+			return getFenjing(ImgPages, item, item.city_name + '-' + item.ambiguity_sname)(1);
+		}).catch(function(err){
+			return Promise.reject(err);
 		});
-	}).then(function(data){
-		console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
-		// 页数
-		// const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
-		// 测试
-		const ImgPages = 1;
-		// 获取城市风景图
-		return getFenjing(ImgPages, item, item.city_name + '-' + item.ambiguity_sname)(1);
-	}).catch(function(err){
-		return Promise.reject(err);
 	});
 }
 
