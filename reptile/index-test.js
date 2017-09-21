@@ -355,6 +355,7 @@ const getSingleJingdianExtraMessage = (data) => {
 global.db.once('open', function () {
 	let c = 0;
 	console.log('Mongodb running');
+	console.log('now:' + new Date())
 	let timer = setInterval(function(){
 		if(c > 78){
 			clearInterval(timer);
@@ -362,5 +363,6 @@ global.db.once('open', function () {
 			return;
 		}
 		fetchPage(++c)(++c);
-	},20*60*1000);
+		console.log('第' + c + '次抓取：now:' + new Date())
+	},10*60*1000);
 });
