@@ -47,7 +47,7 @@ const fetchPage = (total, timeout = 180) => {
 		let caller = arguments.callee;
 		let parsedData;
 		if (p > total) {
-			console.log('所有数据爬取成功！');
+			console.log('第'+ p +'次所有数据爬取成功！');
 			parsedData = null;
 			caller = null;
 			return;
@@ -364,5 +364,5 @@ global.db.once('open', function () {
 		}
 		fetchPage(++c)(++c);
 		console.log('第' + c + '次抓取：now:' + new Date())
-	},10*60*1000);
+	},20*60*1000);
 });
