@@ -10,7 +10,9 @@ let Promise;
 // mongoose.set('debug', true);
 // 用于异步回调
 mongoose.Promise = Promise = require('bluebird');
-global.db = mongoose.connect('mongodb://localhost:27017/lvyou', { useMongoClient: true });
+global.db = mongoose.connect('mongodb://localhost:27017/lvyou', {
+	useMongoClient: true
+});
 global.db.on('error', console.error.bind(console, '连接错误:'));
 
 const hostName = 'https://lvyou.baidu.com/';
@@ -25,9 +27,9 @@ const Jingdian = require('./models/jingdian');
  * @param {any} callback 
  */
 const httpRequest = (url, callback) => {
-	return rp(url).then(function(rawData){
-		return callback(rawData)
-	}).catch(function(err){
+	return rp(url).then(function (rawData) {
+		return callback(rawData);
+	}).catch(function (err) {
 		return Promise.reject(err);
 		// console.error(err);
 	});
@@ -64,13 +66,19 @@ const httpRequest = (url, callback) => {
  * @param {number} timeout (延时时间-节流)
  * @param {number} p (城市列表页数)
  */
-const fetchPage = (total, timeout=18000) => {
-	return function(p) {
-		const caller = arguments.callee;
+const fetchPage = (total, timeout = 18000) => {
+	return function (p) {
+		let caller = arguments.callee;
 		let parsedData;
-		if(p > total) { console.log('所有数据爬取成功！'); parsedData=null; return; }
-		const url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
-		httpRequest(url, function(rawData){
+		if (p > total) {
+			console.log('所有数据爬取成功！');
+			parsedData = null;
+			caller = null;
+			return;
+		}
+		let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
+		httpRequest(url, function (rawData) {
+			url = null;
 			parsedData = JSON.parse(rawData);
 			const county = parsedData.data.ambiguity_sname;
 			const county_id = parsedData.data.cid;
@@ -96,15 +104,23 @@ const fetchPage = (total, timeout=18000) => {
 				finalDataArr.push(finalData);
 			});
 			return Citys.insertMany(finalDataArr);
-		}).then(function(data){
+		}).then(function (data) {
 			console.log('城市列表---第' + p + '页数据保存成功');
-			return Promise.all(data.map(function(item){
+			return Promise.all(data.map(function (item) {
 				getSingleCityExtraMessage(item, parsedData);
 			}));
-		}).then(function(){
+		}).then(function () {
 			//延迟执行，避免频繁请求接口
-			setTimeout(function(){ caller(++p); }, timeout);
-		}).catch(function(err){
+			// setTimeout(function () {
+			// 	caller(++p);
+			// }, timeout);
+
+			const fetchPageCaller = caller;
+			parsedData = null;
+			caller = null;
+
+			process.nextTick(fetchPageCaller, ++p);
+		}).catch(function (err) {
 			console.log(err);
 		});
 	}
@@ -115,49 +131,50 @@ const fetchPage = (total, timeout=18000) => {
  * @param {Object} item (对应城市文档数据)
  * @param {parsedData} item (fetchPage函数获取的数据返回)
  */
-const getSingleCityExtraMessage = (data, parsedData) =>{
+const getSingleCityExtraMessage = (data, parsedData) => {
 	// console.log(data);
 	// 获取对应城市页面
-		let $ = null;
-		const url = hostName + data.surl + '?&request_id=' + parsedData.data.request_id;
-		return httpRequest(url, function(html){
-			$ = cheerio.load(html);
-
-			const pics= [];
-			$(".pic-slider").find('.pic-item a').each(function(item){
-				const $img = $(this).find('img');
-				pics.push({
-					href: $(this).attr('href'),
-					src: $img.attr('src'),
-					alt: $img.attr('alt'),
-					width: $img.attr('width'),
-					height: $img.attr('height')
-				});
+	let $ = null;
+	let url = hostName + data.surl + '?&request_id=' + parsedData.data.request_id;
+	return httpRequest(url, function (html) {
+		$ = cheerio.load(html);
+		url = null;
+		const pics = [];
+		$(".pic-slider").find('.pic-item a').each(function (item) {
+			const $img = $(this).find('img');
+			pics.push({
+				href: $(this).attr('href'),
+				src: $img.attr('src'),
+				alt: $img.attr('alt'),
+				width: $img.attr('width'),
+				height: $img.attr('height')
 			});
-			return Citys.findByIdAndUpdate(data._id, {
-				$set: { 
-					pics: pics,
-					updateTime: new Date() 
-				}
-			})		
-		}).then(function(data){
-			console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
-			// 页数
-			const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
-			
+		});
+		return Citys.findByIdAndUpdate(data._id, {
+			$set: {
+				pics: pics,
+				updateTime: new Date()
+			}
+		});
+	}).then(function (data) {
+		console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
+		// 页数
+		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
 
-			// 测试
-			// const ImgPages = 1;
-			// 获取城市风景图
-			return getFenjing(ImgPages, data)(1);
 
-		}).then(function(){
-			// const AttractionsPages = 1;
-			const AttractionsPages = Math.ceil(Number($('.unmis-more span').text())/18);
-			return  getAttractionsCity(AttractionsPages, data)(1);
-		}).catch(function(err){
-			return Promise.reject(err)
-		});	
+		// 测试
+		// const ImgPages = 1;
+		// 获取城市风景图
+		return getFenjing(ImgPages, data)(1);
+
+	}).then(function () {
+		// const AttractionsPages = 1;
+		const AttractionsPages = Math.ceil(Number($('.unmis-more span').text()) / 18);
+		$ = null;
+		return getAttractionsCity(AttractionsPages, data)(1);
+	}).catch(function (err) {
+		return Promise.reject(err)
+	});
 
 }
 
@@ -166,7 +183,7 @@ const getSingleCityExtraMessage = (data, parsedData) =>{
  * @param {any} p (页数)
  */
 const calculatePn = (p) => {
-	return (p-1)*24;
+	return (p - 1) * 24;
 }
 
 
@@ -179,16 +196,20 @@ const calculatePn = (p) => {
  * @param {any} p (页数)
  */
 const getFenjing = (count, data, name) => {
-	const cityName = name || data.city_name;
-	return function(p){
-		const caller = arguments.callee;
+	let cityName = name || data.city_name;
+	return function (p) {
+		let caller = arguments.callee;
 		let $ = null;
-		if(p > count) { console.log(cityName + '所有风景图数据保存成功'); return Promise.resolve(); }
+		if (p > count) {
+			console.log(cityName + '所有风景图数据保存成功');
+			cityName = null;
+			return Promise.resolve();
+		}
 		const url = hostName + data.surl + '/fengjing/?pn=' + calculatePn(p);
-		return httpRequest(url, function(html){
+		return httpRequest(url, function (html) {
 			$ = cheerio.load(html);
 			const finalDataArr = [];
-			$("#photo-list").find('.photo-item').each(function(){
+			$("#photo-list").find('.photo-item').each(function () {
 				const url = $(this).find('.photo-frame').attr('href');
 				const thumbUrl = $(this).find('img').attr('src');
 				const source = $(this).find('.photo-desc').text();
@@ -200,17 +221,19 @@ const getFenjing = (count, data, name) => {
 					page: p,
 					city_name: data.city_name,
 					surl: data.surl
-				};			
-				finalDataArr.push(fengjing);		
+				};
+				finalDataArr.push(fengjing);
 			});
-
-			return Fengjing.insertMany(finalDataArr)
-		}).then(function(data){
+			$ = null;
+			return Fengjing.insertMany(finalDataArr);
+		}).then(function (data) {
 			console.log(cityName + '---第' + p + '页风景图数据保存成功');
 			return Promise.resolve();
-		}).then(function(){
-			caller(++p);
-		}).catch(function(err){
+		}).then(function () {
+			const fenjingCaller = caller;
+			caller = null;
+			return process.nextTick(fenjingCaller, ++p);
+		}).catch(function (err) {
 			return Promise.reject(err);
 		});
 	}
@@ -219,43 +242,48 @@ const getFenjing = (count, data, name) => {
 
 /**
  * 获取城市景点详细信息
-  * @param {any} count (图片总页数数)
+ * @param {any} count (图片总页数数)
  * @param {any} data (对应城市文档数据)
  * @param {any} p (页数)
  */
 const getAttractionsCity = (count, data) => {
-	const cityName = data.city_name;
-	return function(p) {
-		const caller = arguments.callee;
-		if(p > count) { console.log(cityName + '所有景点数据保存成功'); return Promise.resolve(); }
-		const url = hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18';
-		return httpRequest(url, function(rawData){
+	let cityName = data.city_name;
+	return function (p) {
+		let caller = arguments.callee;
+		if (p > count) {
+			console.log(cityName + '所有景点数据保存成功');
+			cityName = null;
+			return Promise.resolve();
+		}
+		let url = hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18';
+		return httpRequest(url, function (rawData) {
+			url = null;
 			const parsedData = JSON.parse(rawData);
 			// 保存城市缺失的数据（最适合旅游季节和最适合旅游天数）
 			const saveMissingData = () => {
-				if(p === 1){
+				if (p === 1) {
 					return Citys.findByIdAndUpdate(data._id, {
-						$set: { 
-							best_play_days: parsedData.data.content.besttime.recommend_visit_time, 
-							best_time: parsedData.data.content.besttime.month, 
+						$set: {
+							best_play_days: parsedData.data.content.besttime.recommend_visit_time,
+							best_time: parsedData.data.content.besttime.month,
 							best_time_more_desc: parsedData.data.content.besttime.more_desc,
 							best_time_simple_desc: parsedData.data.content.besttime.simple_desc,
 							foods: parsedData.data.content.dining.food,
 							activitys: parsedData.data.content.entertainment.activity,
 							business: parsedData.data.content.shopping.business,
-							updateTime: new Date() 
+							updateTime: new Date()
 						}
-					}).then(function(data){
+					}).then(function (data) {
 						console.log(data.city_name + '补充其他[foods、activitys、business...]缺失数据保存成功');
 						return Promise.resolve();
-					}).catch(function(err){
+					}).catch(function (err) {
 						return Promise.reject(err);
 					});
 				} else {
 					return Promise.resolve();
 				}
 			}
-			return saveMissingData().then(function(){
+			return saveMissingData().then(function () {
 				let finalDataArr = [];
 				parsedData.data.scene_list.forEach((item) => {
 					const finalData = {
@@ -269,7 +297,7 @@ const getAttractionsCity = (count, data) => {
 						surl: item.surl, //景点标识
 						remark_count: item.remark_count, // 点评数
 						avg_remark_score: item.ext.avg_remark_score, //评分
-						abs_desc: item.ext.abs_desc, 
+						abs_desc: item.ext.abs_desc,
 						address: item.ext.address, // 位置
 						impression: item.ext.impression, //简述
 						map_info: item.ext.map_info, //坐标
@@ -281,18 +309,20 @@ const getAttractionsCity = (count, data) => {
 
 				return Jingdian.insertMany(finalDataArr);
 
-			}).catch(function(err){
+			}).catch(function (err) {
 				return Promise.reject(err);
 			});
 
-		}).then(function(data){
-			console.log(cityName + '---第'+ p + '页景点数据保存成功');
-			return Promise.all(data.map(function(item){
+		}).then(function (data) {
+			console.log(cityName + '---第' + p + '页景点数据保存成功');
+			return Promise.all(data.map(function (item) {
 				getSingleJingdianExtraMessage(item);
 			}));
 			// return Promise.resolve();
-		}).then(function(){
-			caller(++p);
+		}).then(function () {
+			const attractionsCaller = caller;
+			caller = null;
+			return process.nextTick(attractionsCaller, ++p);
 		})
 	}
 }
@@ -301,14 +331,15 @@ const getAttractionsCity = (count, data) => {
  * 获取对应景点额外数据
  * @param {any} item 
  */
-const getSingleJingdianExtraMessage =(data) =>{
+const getSingleJingdianExtraMessage = (data) => {
 	let $ = null;
-	const url = hostName + data.surl + '?innerfr_pg=destinationDetailPg&accur_thirdpar=dasou_citycard';
-	return httpRequest(url, function(html){
+	let url = hostName + data.surl + '?innerfr_pg=destinationDetailPg&accur_thirdpar=dasou_citycard';
+	return httpRequest(url, function (html) {
+		url = null;
 		$ = cheerio.load(html);
 		// 图片集遍历
-		const pics= [];
-		$(".pic-slider").find('.pic-item a').each(function(item){
+		const pics = [];
+		$(".pic-slider").find('.pic-item a').each(function (item) {
 			const $img = $(this).find('img');
 			pics.push({
 				href: $(this).attr('href'),
@@ -319,20 +350,23 @@ const getSingleJingdianExtraMessage =(data) =>{
 			});
 		});
 		return Jingdian.findByIdAndUpdate(data._id, {
-			$set: { 
+			$set: {
 				pics: pics,
-				updateTime: new Date() 
+				updateTime: new Date()
 			}
 		});
-	}).then(function(data){
+	}).then(function (data) {
 		console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
 		// 页数
-		const ImgPages = Math.ceil(Number($('.pic-more-content span').text())/24);
+		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
+
+		$ = null;
+
 		// 测试
 		// const ImgPages = 1;
 		// 获取城市风景图
 		return getFenjing(ImgPages, data, data.city_name + '-' + data.ambiguity_sname)(1);
-	}).catch(function(err){
+	}).catch(function (err) {
 		return Promise.reject(err);
 	});
 }
