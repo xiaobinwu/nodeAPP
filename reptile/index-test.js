@@ -3,7 +3,6 @@ const https = require('https');
 
 const rp = require('request-promise');
 
-const sleep = require('sleep');
 
 // 引入mongoose
 let mongoose = require('mongoose');
@@ -43,7 +42,7 @@ const httpRequest = (url, callback) => {
  * @param {number} timeout (延时时间-节流)
  * @param {number} p (城市列表页数)
  */
-const fetchPage = (total, timeout = 18000) => {
+const fetchPage = (total, timeout = 180) => {
 	return function (p) {
 		let caller = arguments.callee;
 		let parsedData;
@@ -53,9 +52,10 @@ const fetchPage = (total, timeout = 18000) => {
 			caller = null;
 			return;
 		}
-		if(p%5 === 0){
-			sleep.sleep(timeout);
-		}
+		// if(p%5 === 0){
+		// 	const waitUntil = new Date(new Date().getTime() + timeout * 1000);
+		// 	while(waitUntil > new Date()){}
+		// }
 		let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
 		httpRequest(url, function (rawData) {
 			url = null;
@@ -353,6 +353,14 @@ const getSingleJingdianExtraMessage = (data) => {
 
 
 global.db.once('open', function () {
+	let c = 0;
 	console.log('Mongodb running');
-	fetchPage(78)(1);
+	let timer = setInterval(function(){
+		if(c > 78){
+			clearInterval(timer);
+			timer = null;
+			return;
+		}
+		fetchPage(++c)(++c);
+	},20*60*1000);
 });
