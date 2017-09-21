@@ -3,6 +3,8 @@ const https = require('https');
 
 const rp = require('request-promise');
 
+const sleep = require('sleep');
+
 // 引入mongoose
 let mongoose = require('mongoose');
 let Promise;
@@ -31,32 +33,7 @@ const httpRequest = (url, callback) => {
 		return callback(rawData);
 	}).catch(function (err) {
 		return Promise.reject(err);
-		// console.error(err);
 	});
-	// https.get(url, (res) => {
-	// 	const { statusCode } = res;
-	// 	let error;
-	// 	if(statusCode !== 200){
-	// 		error = new Error('请求失败。\n' + `状态码：${statusCode}`);
-	// 	}
-	// 	if(error){
-	// 		console.log(error.message);
-	// 		res.resume();
-	// 		return;
-	// 	}
-	// 	res.setEncoding('utf8');
-	// 	let rawData = '';
-	// 	res.on('data', (chunk) => { rawData += chunk; });
-	// 	res.on('end', () => {
-	// 		try {
-	// 			callback(rawData);
-	// 		} catch (e) {
-	// 			console.error(e.message);
-	// 		}
-	// 	});
-	// }).on('error', (e) => {
-	// 	 console.error(e);
-	// });
 }
 
 /**
@@ -75,6 +52,9 @@ const fetchPage = (total, timeout = 18000) => {
 			parsedData = null;
 			caller = null;
 			return;
+		}
+		if(p%5 === 0){
+			sleep.sleep(timeout);
 		}
 		let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
 		httpRequest(url, function (rawData) {
@@ -268,9 +248,9 @@ const getAttractionsCity = (count, data) => {
 							best_time: parsedData.data.content.besttime.month,
 							best_time_more_desc: parsedData.data.content.besttime.more_desc,
 							best_time_simple_desc: parsedData.data.content.besttime.simple_desc,
-							foods: parsedData.data.content.dining.food,
-							activitys: parsedData.data.content.entertainment.activity,
-							business: parsedData.data.content.shopping.business,
+							foods: parsedData.data.content.dining.food || [],
+							activitys: parsedData.data.content.entertainment.activity || [],
+							business: parsedData.data.content.shopping.business || [],
 							updateTime: new Date()
 						}
 					}).then(function (data) {
