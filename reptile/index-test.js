@@ -91,6 +91,8 @@ const getSingleCityExtraMessage = (data, parsedData) => {
 	// console.log(data);
 	// 获取对应城市页面
 	let $ = null;
+	let ImgPagesArr = [];
+	let AttractionsPagesArr = [];
 	let url = hostName + data.surl + '?&request_id=' + parsedData.data.request_id;
 	return httpRequest(url, function (html) {
 		$ = cheerio.load(html);
@@ -116,29 +118,28 @@ const getSingleCityExtraMessage = (data, parsedData) => {
 		console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
 		// 页数
 		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-		let ImgPagesArr = [];
 
 		for (let index = 1; index <= ImgPages; index++) {
-			ImgPagesArr[index-1] = getFenjing(index, data);
+			ImgPagesArr[index-1] = process.nextTick(getFenjing, index, data);
 		}
 
 		return Promise.all(ImgPagesArr);
 
 	}).then(function () {
-
+		ImgPagesArr = null;
 		console.log(data.city_name + '所有风景图数据保存成功');
 
 		const AttractionsPages = Math.ceil(Number($('.unmis-more span').text()) / 18);
-		let AttractionsPagesArr = [];
 		$ = null;
 
 		for (let index = 1; index <= AttractionsPages; index++) {
-			AttractionsPagesArr[index-1] = getAttractionsCity(index, data);
+			AttractionsPagesArr[index-1] = process.nextTick(getAttractionsCity, index, data);
 		}
 
 		return Promise.all(AttractionsPagesArr);
 
 	}).then(function(){
+		AttractionsPagesArr = null;
 		console.log(data.city_name + '所有景点数据保存成功');
 		return Promise.resolve();
 	}).catch(function (err) {
@@ -276,6 +277,7 @@ const getAttractionsCity = (p, data) => {
  * @param {any} item 
  */
 const getSingleJingdianExtraMessage = (data) => {
+	let ImgPagesArr = [];
 	let $ = null;
 	let url = hostName + data.surl + '?innerfr_pg=destinationDetailPg&accur_thirdpar=dasou_citycard';
 	return httpRequest(url, function (html) {
@@ -303,17 +305,18 @@ const getSingleJingdianExtraMessage = (data) => {
 		console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
 		// 页数
 		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-		let ImgPagesArr = [];
+		
 		$ = null;
 
 		for (let index = 1; index <= ImgPages; index++) {
-			ImgPagesArr[index-1] = getFenjing(index, data, data.city_name + '-' + data.ambiguity_sname);
+			ImgPagesArr[index-1] = process.nextTick(getFenjing, index, data, data.city_name + '-' + data.ambiguity_sname);
 		}
 
 		return Promise.all(ImgPagesArr);
 
-
-
+	}).then(function(){
+		ImgPagesArr = null;
+		return Promise.resolve();
 	}).catch(function (err) {
 		return Promise.reject(err);
 	});
