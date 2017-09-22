@@ -42,68 +42,44 @@ const httpRequest = (url, callback) => {
  * @param {number} timeout (延时时间-节流)
  * @param {number} p (城市列表页数)
  */
-const fetchPage = (total, timeout = 180) => {
-	return function (p) {
-		let caller = arguments.callee;
-		let parsedData;
-		if (p > total) {
-			console.log('第'+ p +'次所有数据爬取成功！');
-			parsedData = null;
-			caller = null;
-			return;
-		}
-		// if(p%5 === 0){
-		// 	const waitUntil = new Date(new Date().getTime() + timeout * 1000);
-		// 	while(waitUntil > new Date()){}
-		// }
-		let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
-		httpRequest(url, function (rawData) {
-			url = null;
-			parsedData = JSON.parse(rawData);
-			const county = parsedData.data.ambiguity_sname;
-			const county_id = parsedData.data.cid;
-			let finalDataArr = [];
-			parsedData.data.scene_list.forEach((item) => {
-				const finalData = {
-					county: county, // 国家名
-					county_id: county_id, // 国家id，后期可以多国家
-					city_id: item.cid, // 城市id
-					city_name: item.ambiguity_sname, // 城市名
-					en_sname: item.ext.en_sname, // 城市英文名
-					cover: item.cover.full_url, // 城市图片
-					surl: item.surl, // 城市标志，用于抓取对应城市景点
-					avg_cost: item.ext.avg_cost, // 人均花费
-					level: item.ext.level, //景区登记
-					avg_remark_score: item.ext.avg_remark_score, // 评分
-					remark_count: item.remark_count, // 点评数
-					impression: item.ext.impression, // 城市简述
-					more_desc: item.ext.more_desc, // 城市详述
-					abs_desc: item.ext.abs_desc,
-					map_info: item.ext.map_info // 坐标
-				}
-				finalDataArr.push(finalData);
-			});
-			return Citys.insertMany(finalDataArr);
-		}).then(function (data) {
-			console.log('城市列表---第' + p + '页数据保存成功');
-			return Promise.all(data.map(function (item) {
-				getSingleCityExtraMessage(item, parsedData);
-			}));
-		}).then(function () {
-			//延迟执行，避免频繁请求接口
-			// setTimeout(function () {
-			// 	caller(++p);
-			// }, timeout);
-
-			const fetchPageCaller = caller;
-			parsedData = null;
-			caller = null;
-
-			process.nextTick(fetchPageCaller, ++p);
-		}).catch(function (err) {
-			console.log(err);
+const fetchPage = (p) => {
+	let parsedData;
+	let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
+	httpRequest(url, function (rawData) {
+		url = null;
+		parsedData = JSON.parse(rawData);
+		const county = parsedData.data.ambiguity_sname;
+		const county_id = parsedData.data.cid;
+		let finalDataArr = [];
+		parsedData.data.scene_list.forEach((item) => {
+			const finalData = {
+				county: county, // 国家名
+				county_id: county_id, // 国家id，后期可以多国家
+				city_id: item.cid, // 城市id
+				city_name: item.ambiguity_sname, // 城市名
+				en_sname: item.ext.en_sname, // 城市英文名
+				cover: item.cover.full_url, // 城市图片
+				surl: item.surl, // 城市标志，用于抓取对应城市景点
+				avg_cost: item.ext.avg_cost, // 人均花费
+				level: item.ext.level, //景区登记
+				avg_remark_score: item.ext.avg_remark_score, // 评分
+				remark_count: item.remark_count, // 点评数
+				impression: item.ext.impression, // 城市简述
+				more_desc: item.ext.more_desc, // 城市详述
+				abs_desc: item.ext.abs_desc,
+				map_info: item.ext.map_info // 坐标
+			}
+			finalDataArr.push(finalData);
 		});
-	}
+		return Citys.insertMany(finalDataArr);
+	}).then(function (data) {
+		console.log('城市列表---第' + p + '页数据保存成功');
+		return Promise.all(data.map(function (item) {
+			getSingleCityExtraMessage(item, parsedData);
+		}));
+	}).catch(function (err) {
+		console.log(err);
+	});
 }
 
 /**
@@ -140,18 +116,31 @@ const getSingleCityExtraMessage = (data, parsedData) => {
 		console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
 		// 页数
 		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
+		let ImgPagesArr = [];
 
+		for (let index = 1; index <= ImgPages; index++) {
+			ImgPagesArr[index-1] = getFenjing(index, data);
+		}
 
-		// 测试
-		// const ImgPages = 1;
-		// 获取城市风景图
-		return getFenjing(ImgPages, data)(1);
+		return Promise.all(ImgPagesArr);
 
 	}).then(function () {
-		// const AttractionsPages = 1;
+
+		console.log(data.city_name + '所有风景图数据保存成功');
+
 		const AttractionsPages = Math.ceil(Number($('.unmis-more span').text()) / 18);
+		let AttractionsPagesArr = [];
 		$ = null;
-		return getAttractionsCity(AttractionsPages, data)(1);
+
+		for (let index = 1; index <= AttractionsPages; index++) {
+			AttractionsPagesArr[index-1] = getAttractionsCity(index, data);
+		}
+
+		return Promise.all(AttractionsPagesArr);
+
+	}).then(function(){
+		console.log(data.city_name + '所有景点数据保存成功');
+		return Promise.resolve();
 	}).catch(function (err) {
 		return Promise.reject(err)
 	});
@@ -175,48 +164,36 @@ const calculatePn = (p) => {
  * @param {any} name (是否为为景点的风景图)
  * @param {any} p (页数)
  */
-const getFenjing = (count, data, name) => {
+const getFenjing = (p, data, name) => {
 	let cityName = name || data.city_name;
-	return function (p) {
-		let caller = arguments.callee;
-		let $ = null;
-		if (p > count) {
-			console.log(cityName + '所有风景图数据保存成功');
-			cityName = null;
-			return Promise.resolve();
-		}
-		const url = hostName + data.surl + '/fengjing/?pn=' + calculatePn(p);
-		return httpRequest(url, function (html) {
-			$ = cheerio.load(html);
-			const finalDataArr = [];
-			$("#photo-list").find('.photo-item').each(function () {
-				const url = $(this).find('.photo-frame').attr('href');
-				const thumbUrl = $(this).find('img').attr('src');
-				const source = $(this).find('.photo-desc').text();
-				const fengjing = {
-					thumbUrl: thumbUrl,
-					url: url,
-					city_id: data.city_id,
-					source: source,
-					page: p,
-					city_name: data.city_name,
-					surl: data.surl
-				};
-				finalDataArr.push(fengjing);
-			});
-			$ = null;
-			return Fengjing.insertMany(finalDataArr);
-		}).then(function (data) {
-			console.log(cityName + '---第' + p + '页风景图数据保存成功');
-			return Promise.resolve();
-		}).then(function () {
-			const fenjingCaller = caller;
-			caller = null;
-			return process.nextTick(fenjingCaller, ++p);
-		}).catch(function (err) {
-			return Promise.reject(err);
+	let $ = null;
+	const url = hostName + data.surl + '/fengjing/?pn=' + calculatePn(p);
+	return httpRequest(url, function (html) {
+		$ = cheerio.load(html);
+		const finalDataArr = [];
+		$("#photo-list").find('.photo-item').each(function () {
+			const url = $(this).find('.photo-frame').attr('href');
+			const thumbUrl = $(this).find('img').attr('src');
+			const source = $(this).find('.photo-desc').text();
+			const fengjing = {
+				thumbUrl: thumbUrl,
+				url: url,
+				city_id: data.city_id,
+				source: source,
+				page: p,
+				city_name: data.city_name,
+				surl: data.surl
+			};
+			finalDataArr.push(fengjing);
 		});
-	}
+		$ = null;
+		return Fengjing.insertMany(finalDataArr);
+	}).then(function (data) {
+		console.log(cityName + '---第' + p + '页风景图数据保存成功');
+		return Promise.resolve();
+	}).catch(function (err) {
+		return Promise.reject(err);
+	});
 }
 
 
@@ -226,85 +203,72 @@ const getFenjing = (count, data, name) => {
  * @param {any} data (对应城市文档数据)
  * @param {any} p (页数)
  */
-const getAttractionsCity = (count, data) => {
+const getAttractionsCity = (p, data) => {
 	let cityName = data.city_name;
-	return function (p) {
-		let caller = arguments.callee;
-		if (p > count) {
-			console.log(cityName + '所有景点数据保存成功');
-			cityName = null;
-			return Promise.resolve();
-		}
-		let url = hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18';
-		return httpRequest(url, function (rawData) {
-			url = null;
-			const parsedData = JSON.parse(rawData);
-			// 保存城市缺失的数据（最适合旅游季节和最适合旅游天数）
-			const saveMissingData = () => {
-				if (p === 1) {
-					return Citys.findByIdAndUpdate(data._id, {
-						$set: {
-							best_play_days: parsedData.data.content.besttime.recommend_visit_time,
-							best_time: parsedData.data.content.besttime.month,
-							best_time_more_desc: parsedData.data.content.besttime.more_desc,
-							best_time_simple_desc: parsedData.data.content.besttime.simple_desc,
-							foods: parsedData.data.content.dining.food || [],
-							activitys: parsedData.data.content.entertainment.activity || [],
-							business: parsedData.data.content.shopping.business || [],
-							updateTime: new Date()
-						}
-					}).then(function (data) {
-						console.log(data.city_name + '补充其他[foods、activitys、business...]缺失数据保存成功');
-						return Promise.resolve();
-					}).catch(function (err) {
-						return Promise.reject(err);
-					});
-				} else {
-					return Promise.resolve();
-				}
-			}
-			return saveMissingData().then(function () {
-				let finalDataArr = [];
-				parsedData.data.scene_list.forEach((item) => {
-					const finalData = {
-						county: data.county, // 国家名
-						county_id: data.county_id, // 国家id，后期可以多国家
-						city_id: data.city_id, //城市id
-						city_name: data.city_name, // 城市名
-						en_sname: data.en_sname, //城市英文名
-						cover: item.cover.full_url, // 景点图片
-						ambiguity_sname: item.ambiguity_sname, //景点名字
-						surl: item.surl, //景点标识
-						remark_count: item.remark_count, // 点评数
-						avg_remark_score: item.ext.avg_remark_score, //评分
-						abs_desc: item.ext.abs_desc,
-						address: item.ext.address, // 位置
-						impression: item.ext.impression, //简述
-						map_info: item.ext.map_info, //坐标
-						more_desc: item.ext.more_desc, //详述
-						sketch_desc: item.ext.sketch_desc //草图介绍
+	let url = hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18';
+	return httpRequest(url, function (rawData) {
+		url = null;
+		const parsedData = JSON.parse(rawData);
+		// 保存城市缺失的数据（最适合旅游季节和最适合旅游天数）
+		const saveMissingData = () => {
+			if (p === 1) {
+				return Citys.findByIdAndUpdate(data._id, {
+					$set: {
+						best_play_days: parsedData.data.content.besttime.recommend_visit_time,
+						best_time: parsedData.data.content.besttime.month,
+						best_time_more_desc: parsedData.data.content.besttime.more_desc,
+						best_time_simple_desc: parsedData.data.content.besttime.simple_desc,
+						foods: parsedData.data.content.dining.food || [],
+						activitys: parsedData.data.content.entertainment.activity || [],
+						business: parsedData.data.content.shopping.business || [],
+						updateTime: new Date()
 					}
-					finalDataArr.push(finalData);
+				}).then(function (data) {
+					console.log(data.city_name + '补充其他[foods、activitys、business...]缺失数据保存成功');
+					return Promise.resolve();
+				}).catch(function (err) {
+					return Promise.reject(err);
 				});
-
-				return Jingdian.insertMany(finalDataArr);
-
-			}).catch(function (err) {
-				return Promise.reject(err);
+			} else {
+				return Promise.resolve();
+			}
+		}
+		return saveMissingData().then(function () {
+			let finalDataArr = [];
+			parsedData.data.scene_list.forEach((item) => {
+				const finalData = {
+					county: data.county, // 国家名
+					county_id: data.county_id, // 国家id，后期可以多国家
+					city_id: data.city_id, //城市id
+					city_name: data.city_name, // 城市名
+					en_sname: data.en_sname, //城市英文名
+					cover: item.cover.full_url, // 景点图片
+					ambiguity_sname: item.ambiguity_sname, //景点名字
+					surl: item.surl, //景点标识
+					remark_count: item.remark_count, // 点评数
+					avg_remark_score: item.ext.avg_remark_score, //评分
+					abs_desc: item.ext.abs_desc,
+					address: item.ext.address, // 位置
+					impression: item.ext.impression, //简述
+					map_info: item.ext.map_info, //坐标
+					more_desc: item.ext.more_desc, //详述
+					sketch_desc: item.ext.sketch_desc //草图介绍
+				}
+				finalDataArr.push(finalData);
 			});
 
-		}).then(function (data) {
-			console.log(cityName + '---第' + p + '页景点数据保存成功');
-			return Promise.all(data.map(function (item) {
-				getSingleJingdianExtraMessage(item);
-			}));
-			// return Promise.resolve();
-		}).then(function () {
-			const attractionsCaller = caller;
-			caller = null;
-			return process.nextTick(attractionsCaller, ++p);
-		})
-	}
+			return Jingdian.insertMany(finalDataArr);
+
+		}).catch(function (err) {
+			return Promise.reject(err);
+		});
+
+	}).then(function (data) {
+		console.log(cityName + '---第' + p + '页景点数据保存成功');
+		return Promise.all(data.map(function (item) {
+			getSingleJingdianExtraMessage(item);
+		}));
+	});
 }
 
 /**
@@ -339,13 +303,17 @@ const getSingleJingdianExtraMessage = (data) => {
 		console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
 		// 页数
 		const ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-
+		let ImgPagesArr = [];
 		$ = null;
 
-		// 测试
-		// const ImgPages = 1;
-		// 获取城市风景图
-		return getFenjing(ImgPages, data, data.city_name + '-' + data.ambiguity_sname)(1);
+		for (let index = 1; index <= ImgPages; index++) {
+			ImgPagesArr[index-1] = getFenjing(index, data, data.city_name + '-' + data.ambiguity_sname);
+		}
+
+		return Promise.all(ImgPagesArr);
+
+
+
 	}).catch(function (err) {
 		return Promise.reject(err);
 	});
@@ -353,16 +321,18 @@ const getSingleJingdianExtraMessage = (data) => {
 
 
 global.db.once('open', function () {
-	let c = 0;
+	let c = 1;
 	console.log('Mongodb running');
-	console.log('now:' + new Date())
+	console.log('第1次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString())
+	fetchPage(1);
 	let timer = setInterval(function(){
 		if(c > 78){
 			clearInterval(timer);
 			timer = null;
 			return;
 		}
-		fetchPage(++c)(++c);
-		console.log('第' + c + '次抓取：now:' + new Date())
-	},20*60*1000);
+		++c;
+		console.log('第' + c + '次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString());
+		fetchPage(c);
+	},60*60*1000);
 });
