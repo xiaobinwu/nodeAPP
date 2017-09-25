@@ -119,7 +119,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 		url = null;
 		let pics = [];
 		let ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-		let AttractionsPages = $('.unmis-more span').length > 0 ? Math.ceil(Number($('.unmis-more span').text()) / 18) : Math.ceil(Number($(".main-title a").eq(0).text().replace(/[^0-9]/ig,"")) / 18);
+		let AttractionsPages = $('.unmis-more span').eq(0).length > 0 ? Math.ceil(Number($('.unmis-more span').eq(0).text()) / 18) : Math.ceil(Number($(".main-title a").eq(0).text().replace(/[^0-9]/ig,"")) / 18);
 		$(".pic-slider").find('.pic-item a').each(function (item) {
 			const $img = $(this).find('img');
 			pics.push({

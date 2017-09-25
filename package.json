@@ -19,7 +19,9 @@
   "devDependencies": {
     "bluebird": "^3.5.0",
     "cheerio": "^1.0.0-rc.2",
+    "easy-monitor": "^2.1.7",
     "mongoose": "^4.11.10",
     "request": "^2.82.0",
-    "request-promise": "^4.2.1"  }
+    "request-promise": "^4.2.1"
+  }
 }
