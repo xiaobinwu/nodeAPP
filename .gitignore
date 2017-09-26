@@ -32,4 +32,6 @@ npm-debug.log
 
 /reptile/data/*
 
+/data/*
+
 .DS_Store

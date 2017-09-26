@@ -8,6 +8,7 @@ const JingdianSchema = new mongoose.Schema({
     city_id: { type: String, index: true } , //城市Id
     city_name: String, // 城市名
     en_sname: String, //城市英文名
+    psurl: String, // 城市标志
     cover: String, // 景点图片
     pics: [Schema.Types.Mixed], // 图片集
     ambiguity_sname: String, //景点名字

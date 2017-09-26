@@ -19,8 +19,8 @@ const rp = require('request-promise');
 // });
 
 // node性能监控 
-const easyMonitor = require('easy-monitor');
-easyMonitor('nodeAPP');
+// const easyMonitor = require('easy-monitor');
+// easyMonitor('nodeAPP');
 
 
 // 引入mongoose
@@ -91,12 +91,13 @@ const fetchPage = (p) => {
 		parsedData = null;
 		return Citys.insertMany(finalDataArr).then(function(data){
 			finalDataArr = null;
-			console.log('城市列表---第' + p + '页数据保存成功');
+			console.log('城市列表---第' + p + '页基本数据保存成功');
 			return Promise.all(data.map(function (item) {
-				getSingleCityExtraMessage(item, request_id);
+				return getSingleCityExtraMessage(item, request_id);
 			}));
 		}).then(function(){
-			console.log('第' + p + '页所有数据保存成功');
+			console.log('第' + p + '页所有数据（城市数据、景点、景点风景图）保存成功');
+			return Promise.resolve();
 		}).catch(function (err) {
 			return Promise.reject(err);
 		});
@@ -138,29 +139,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 			}
 		}).then(function (data) {
 			pics = null;
-			console.log(data.city_name + '补充缺失数据[pics字段]保存成功');
-
-			let loopFengjing = (x) => {
-				return getFenjing(x, data).then(function(){
-					x++;
-					if(x <= ImgPages){
-						return loopFengjing(x);
-					} else{
-						console.log(data.city_name + '总共有' + ImgPages + '页风景图下载完毕！');
-						ImgPages = null;
-						x = null;
-						loopFengjing = null;
-						return Promise.resolve();
-					}
-				}).catch(function (err) {
-					return Promise.reject(err);
-				});
-			}
-
-			return loopFengjing(1);
-
-		}).then(function () {
-			console.log(data.city_name + '所有风景图数据保存成功');
+			console.log(data.city_name + '补充缺失基本数据[pics字段]保存成功');
 
 			let loopAttractionsCity = (l) => {
 				return getAttractionsCity(l, data).then(function(){
@@ -181,11 +160,6 @@ const getSingleCityExtraMessage = (data, request_id) => {
 
 			return loopAttractionsCity(1);
 
-
-
-		}).then(function(){
-			console.log(data.city_name + '所有景点数据保存成功');
-			return Promise.resolve();
 		}).catch(function (err) {
 			return Promise.reject(err);
 		});
@@ -227,6 +201,7 @@ const getFenjing = (p, data, name) => {
 				source: source,
 				page: p,
 				city_name: data.city_name,
+				psurl: data.psurl,
 				surl: data.surl
 			};
 			finalDataArr.push(fengjing);
@@ -290,6 +265,7 @@ const getAttractionsCity = (p, data) => {
 					county_id: data.county_id, // 国家id，后期可以多国家
 					city_id: data.city_id, //城市id
 					city_name: data.city_name, // 城市名
+					psurl: data.surl, //城市标志
 					en_sname: data.en_sname, //城市英文名
 					cover: item.cover.full_url, // 景点图片
 					ambiguity_sname: item.ambiguity_sname, //景点名字
@@ -311,12 +287,14 @@ const getAttractionsCity = (p, data) => {
 				console.log(cityName + '---第' + p + '页景点数据保存成功');
 				cityName = null;
 				return Promise.all(data.map(function (item) {
-					getSingleJingdianExtraMessage(item);
+					return getSingleJingdianExtraMessage(item);
 				}));
 			}).catch(function (err) {
 				return Promise.reject(err);
 			});
-		})
+		}).catch(function (err) {
+			return Promise.reject(err);
+		});
 	}).catch(function (err) {
 		return Promise.reject(err);
 	});

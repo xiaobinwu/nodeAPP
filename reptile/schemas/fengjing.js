@@ -8,7 +8,8 @@ const FengjingSchema = new mongoose.Schema({
     source: String, // 来源
     page: Number, // 所属页数
     city_name: String, //城市
-    surl: String,  // 城市标志，用于抓取对应城市景点
+    surl: String,  // 城市景点标志，用于抓取对应城市景点
+    psurl: String, // 城市标志，用于抓取对应城市
     createTime: { type: Date, default: Date.now }, //创建时间
     updateTime: { type: Date, default: Date.now } //更新时间
 })
