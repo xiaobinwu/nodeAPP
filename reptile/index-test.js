@@ -311,6 +311,7 @@ const getSingleJingdianExtraMessage = (data) => {
 		url = null;
 		let $ = cheerio.load(html);
 		let ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
+		ImgPages = ImgPages > 5 ? 5 : ImgPages;
 		// 图片集遍历
 		let pics = [];
 		$(".pic-slider").find('.pic-item a').each(function (item) {
