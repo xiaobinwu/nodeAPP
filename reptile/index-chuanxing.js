@@ -92,9 +92,26 @@ const fetchPage = (p) => {
 		return Citys.insertMany(finalDataArr).then(function(data){
 			finalDataArr = null;
 			console.log('城市列表---第' + p + '页基本数据保存成功');
-			return Promise.all(data.map(function (item) {
-				return getSingleCityExtraMessage(item, request_id);
-			}));
+
+			let loopCityExtraMessage = (l) => {
+				return getSingleCityExtraMessage(data[l], request_id).then(function(){
+					l++;
+					if(l <= (data.length - 1)){
+						return loopCityExtraMessage(l);
+					} else{
+						l = null;
+						loopCityExtraMessage = null;
+						return Promise.resolve();
+					}
+				}).catch(function (err) {
+					return Promise.reject(err);
+				});
+			}
+
+			return loopCityExtraMessage(0);
+
+
+
 		}).then(function(){
 			console.log('第' + p + '页所有数据（城市数据、景点、景点风景图）保存成功');
 			return Promise.resolve();
@@ -286,9 +303,27 @@ const getAttractionsCity = (p, data) => {
 				finalDataArr = null;
 				console.log(cityName + '---第' + p + '页景点数据保存成功');
 				cityName = null;
-				return Promise.all(data.map(function (item) {
-					return getSingleJingdianExtraMessage(item);
-				}));
+
+				let loopSingleJingdianExtraMessage = (l) => {
+					return getSingleJingdianExtraMessage(data[l]).then(function(){
+						l++;
+						if(l <= (data.length - 1)){
+							return loopSingleJingdianExtraMessage(l);
+						} else{
+							l = null;
+							loopSingleJingdianExtraMessage = null;
+							return Promise.resolve();
+						}
+					}).catch(function (err) {
+						return Promise.reject(err);
+					});
+				}
+
+				return loopSingleJingdianExtraMessage(0);
+
+
+
+
 			}).catch(function (err) {
 				return Promise.reject(err);
 			});
