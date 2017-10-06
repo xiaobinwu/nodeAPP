@@ -3,6 +3,8 @@ const https = require('https');
 
 const rp = require('request-promise');
 
+const CronJob = require('cron').CronJob;
+
 // 检查内存泄漏(node版本不能用)
 // const memwatch = require('memwatch');
 // const heapdump = require('heapdump');
@@ -58,10 +60,11 @@ const httpRequest = (url, callback) => {
  * 获取城市列表
  * @param {number} p (城市列表页数)
  */
-const fetchPage = (p) => {
+const fetchPage = (p, rn) => {
+	console.log('第'+ p +'-'+ rn +'次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString())
 	let parsedData;
-	let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=18';
-	httpRequest(url, function (rawData) {
+	let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=' + rn;
+	return httpRequest(url, function (rawData) {
 		url = null;
 		parsedData = JSON.parse(rawData);
 		const county = parsedData.data.ambiguity_sname;
@@ -91,7 +94,7 @@ const fetchPage = (p) => {
 		parsedData = null;
 		return Citys.insertMany(finalDataArr).then(function(data){
 			finalDataArr = null;
-			console.log('城市列表---第' + p + '页基本数据保存成功');
+			console.log('第'+ p +'-'+ rn +'次基本数据保存成功');
 
 			let loopCityExtraMessage = (l) => {
 				return getSingleCityExtraMessage(data[l], request_id).then(function(){
@@ -113,13 +116,13 @@ const fetchPage = (p) => {
 
 
 		}).then(function(){
-			console.log('第' + p + '页所有数据（城市数据、景点、景点风景图）保存成功');
+			console.log('第'+ p +'-'+ rn +'次所有数据（城市数据、景点、景点风景图）保存成功');
 			return Promise.resolve();
 		}).catch(function (err) {
 			return Promise.reject(err);
 		});
 	}).catch(function (err) {
-		console.log(err);
+		return Promise.reject(err);
 	});
 }
 
@@ -137,7 +140,18 @@ const getSingleCityExtraMessage = (data, request_id) => {
 		url = null;
 		let pics = [];
 		let ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-		let AttractionsPages = $('.unmis-more span').eq(0).length > 0 ? Math.ceil(Number($('.unmis-more span').eq(0).text()) / 18) : Math.ceil(Number($(".main-title a").eq(0).text().replace(/[^0-9]/ig,"")) / 18);
+
+		let AttractionsPages = 0;
+
+		if($(".unmis-allview").length > 0){
+			AttractionsPages = Math.ceil(Number($('.unmis-more span').eq(0).text()) / 18);
+		}
+
+		if($(".main-scene").length > 0){
+			AttractionsPages = Math.ceil(Number($(".main-title a").eq(0).text().replace(/[^0-9]/ig,"")) / 18);
+		}
+
+
 		$(".pic-slider").find('.pic-item a').each(function (item) {
 			const $img = $(this).find('img');
 			pics.push({
@@ -398,17 +412,26 @@ const getSingleJingdianExtraMessage = (data) => {
 
 global.db.once('open', function () {
 	let c = 4;
+	let rn = 1;
 	console.log('Mongodb running');
-	console.log('第1次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString())
-	fetchPage(c);
-	// let timer = setInterval(function(){
-	// 	if(c > 78){
-	// 		clearInterval(timer);
-	// 		timer = null;
-	// 		return;
-	// 	}
-	// 	++c;
-	// 	console.log('第' + c + '次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString());
-	// 	fetchPage(c);
-	// },60*60*1000);
+
+	
+	let CronJobTimer = new CronJob('0 */59 * * * *',function(){
+
+		if(c > 78) { CronJobTimer = null; return; }
+
+		fetchPage(c, rn).then(function(){
+			if(rn >= 18){
+				c++;
+				rn = 1;
+			} else{
+				rn++;
+			}
+		}).catch(function(){
+			return Promise.reject(err);
+		})
+
+
+	},null,true,null);
+
 });
