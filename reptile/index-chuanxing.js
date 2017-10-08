@@ -411,27 +411,30 @@ const getSingleJingdianExtraMessage = (data) => {
 
 
 global.db.once('open', function () {
-	let c = 4;
+	let c = 1;
 	let rn = 1;
 	console.log('Mongodb running');
 
+	// 获取北京－测试
+	fetchPage(c, rn)
+
 	
-	let CronJobTimer = new CronJob('0 */59 * * * *',function(){
+	// let CronJobTimer = new CronJob('0 */59 * * * *',function(){
 
-		if(c > 78) { CronJobTimer = null; return; }
+	// 	if(c > 1) { CronJobTimer.stop(); CronJobTimer = null; return; }
 
-		fetchPage(c, rn).then(function(){
-			if(rn >= 18){
-				c++;
-				rn = 1;
-			} else{
-				rn++;
-			}
-		}).catch(function(){
-			return Promise.reject(err);
-		})
+	// 	fetchPage(c, rn).then(function(){
+	// 		if(rn >= 18){
+	// 			c++;
+	// 			rn = 1;
+	// 		} else{
+	// 			rn++;
+	// 		}
+	// 	}).catch(function(){
+	// 		return Promise.reject(err);
+	// 	})
 
 
-	},null,true,null);
+	// },null,true,null);
 
 });
