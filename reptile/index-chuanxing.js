@@ -97,6 +97,9 @@ const fetchPage = (p, rn) => {
 			console.log('第'+ p +'-'+ rn +'次基本数据保存成功');
 
 			let loopCityExtraMessage = (l) => {
+				let start = new Date();
+				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				start = null;
 				return getSingleCityExtraMessage(data[l], request_id).then(function(){
 					l++;
 					if(l <= (data.length - 1)){
@@ -173,6 +176,9 @@ const getSingleCityExtraMessage = (data, request_id) => {
 			console.log(data.city_name + '补充缺失基本数据[pics字段]保存成功');
 
 			let loopAttractionsCity = (l) => {
+				let start = new Date();
+				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				start = null;	
 				return getAttractionsCity(l, data).then(function(){
 					l++;
 					if(l <= AttractionsPages){
@@ -320,6 +326,10 @@ const getAttractionsCity = (p, data) => {
 				cityName = null;
 
 				let loopSingleJingdianExtraMessage = (l) => {
+					let start = new Date();
+					while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+					start = null;
+
 					return getSingleJingdianExtraMessage(data[l]).then(function(){
 						l++;
 						if(l <= (data.length - 1)){
@@ -386,6 +396,9 @@ const getSingleJingdianExtraMessage = (data) => {
 			console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
 
 			let loopJingDianFengjing = (j) => {
+				let start = new Date();
+				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				start = null;
 				return getFenjing(j, data, data.city_name + '-' + data.ambiguity_sname).then(function(){
 					j++;
 					if(j <= ImgPages){
