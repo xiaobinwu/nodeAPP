@@ -308,7 +308,8 @@ const getAttractionsCity = (p, data) => {
 					impression: item.ext.impression, //简述
 					map_info: item.ext.map_info, //坐标
 					more_desc: item.ext.more_desc, //详述
-					sketch_desc: item.ext.sketch_desc //草图介绍
+					sketch_desc: item.ext.sketch_desc, //草图介绍
+					page: p
 				}
 				finalDataArr.push(finalData);
 			});
@@ -360,7 +361,6 @@ const getSingleJingdianExtraMessage = (data) => {
 		url = null;
 		let $ = cheerio.load(html);
 		let ImgPages = Math.ceil(Number($('.pic-more-content span').text()) / 24);
-		ImgPages = ImgPages > 5 ? 5 : ImgPages;
 		// 图片集遍历
 		let pics = [];
 		$(".pic-slider").find('.pic-item a').each(function (item) {
@@ -377,10 +377,12 @@ const getSingleJingdianExtraMessage = (data) => {
 		return Jingdian.findByIdAndUpdate(data._id, {
 			$set: {
 				pics: pics,
+				imgNumber: ImgPages,
 				updateTime: new Date()
 			}
 		}).then(function (data) {
 			pics = null;
+			ImgPages = ImgPages > 5 ? 5 : ImgPages; //只爬取前五页
 			console.log(data.city_name + '-' + data.ambiguity_sname + '补充缺失数据[pics字段]保存成功');
 
 			let loopJingDianFengjing = (j) => {
@@ -400,6 +402,7 @@ const getSingleJingdianExtraMessage = (data) => {
 			}
 
 			return loopJingDianFengjing(1);
+
 
 		}).catch(function (err) {
 			return Promise.reject(err);

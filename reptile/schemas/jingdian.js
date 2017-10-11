@@ -21,6 +21,8 @@ const JingdianSchema = new mongoose.Schema({
     map_info: String, //坐标
     more_desc: String, //详述
     sketch_desc: String, //草图介绍
+    page: Number, //所在页数
+    imgNumber: Number, //风景图总数
     createTime: { type: Date, default: Date.now }, //创建时间
     updateTime: { type: Date, default: Date.now } //更新时间
 })
