@@ -98,7 +98,7 @@ const fetchPage = (p, rn) => {
 
 			let loopCityExtraMessage = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
 				start = null;
 				return getSingleCityExtraMessage(data[l], request_id).then(function(){
 					l++;
@@ -177,7 +177,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 
 			let loopAttractionsCity = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
 				start = null;	
 				return getAttractionsCity(l, data).then(function(){
 					l++;
@@ -327,9 +327,8 @@ const getAttractionsCity = (p, data) => {
 
 				let loopSingleJingdianExtraMessage = (l) => {
 					let start = new Date();
-					while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+					while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
 					start = null;
-
 					return getSingleJingdianExtraMessage(data[l]).then(function(){
 						l++;
 						if(l <= (data.length - 1)){
@@ -397,7 +396,7 @@ const getSingleJingdianExtraMessage = (data) => {
 
 			let loopJingDianFengjing = (j) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+1)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
 				start = null;
 				return getFenjing(j, data, data.city_name + '-' + data.ambiguity_sname).then(function(){
 					j++;
