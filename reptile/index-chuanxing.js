@@ -48,8 +48,8 @@ const Jingdian = require('./models/jingdian');
  * @param {any} url 
  * @param {any} callback 
  */
-const httpRequest = (url, callback) => {
-	return rp(url).then(function (rawData) {
+const httpRequest = (options, callback) => {
+	return rp(options).then(function (rawData) {
 		return callback(rawData);
 	}).catch(function (err) {
 		return Promise.reject(err);
@@ -63,9 +63,16 @@ const httpRequest = (url, callback) => {
 const fetchPage = (p, rn) => {
 	console.log('第'+ p +'-'+ rn +'次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString())
 	let parsedData;
-	let url = hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=' + rn;
-	return httpRequest(url, function (rawData) {
-		url = null;
+	let options = {
+		uri: hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=' + rn,
+		headers: {
+			'Connection': 'keep-alive',
+			'Host': 'lvyou.baidu.com',
+			'Referer': 'https://lvyou.baidu.com/zhongguo/jingdian',
+		}
+	}
+	return httpRequest(options, function (rawData) {
+		options = null;
 		parsedData = JSON.parse(rawData);
 		const county = parsedData.data.ambiguity_sname;
 		const county_id = parsedData.data.cid;
@@ -98,7 +105,7 @@ const fetchPage = (p, rn) => {
 
 			let loopCityExtraMessage = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 				start = null;
 				return getSingleCityExtraMessage(data[l], request_id).then(function(){
 					l++;
@@ -177,7 +184,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 
 			let loopAttractionsCity = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 				start = null;	
 				return getAttractionsCity(l, data).then(function(){
 					l++;
@@ -265,10 +272,17 @@ const getFenjing = (p, data, name) => {
  */
 const getAttractionsCity = (p, data) => {
 	let cityName = data.city_name;
-	let url = hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18';
-	console.log('准备获取'+ cityName + '第' + p + '页景点数据, url：' + url );
-	return httpRequest(url, function (rawData) {
-		url = null;
+	let options = {
+		uri: hostName + '/destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=' + data.surl + '&pn=' + p + '&rn=18',
+		headers: {
+			'Connection': 'keep-alive',
+			'Host': 'lvyou.baidu.com',
+			'Referer': 'https://lvyou.baidu.com/zhongguo/jingdian',
+		}
+	}
+	console.log('准备获取'+ cityName + '第' + p + '页景点数据, url：' + options.uri );
+	return httpRequest(options, function (rawData) {
+		options = null;
 		let parsedData = JSON.parse(rawData);
 		// 保存城市缺失的数据（最适合旅游季节和最适合旅游天数）
 		const saveMissingData = () => {
@@ -327,7 +341,7 @@ const getAttractionsCity = (p, data) => {
 
 				let loopSingleJingdianExtraMessage = (l) => {
 					let start = new Date();
-					while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
+					while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 					start = null;
 					return getSingleJingdianExtraMessage(data[l]).then(function(){
 						l++;
@@ -396,7 +410,7 @@ const getSingleJingdianExtraMessage = (data) => {
 
 			let loopJingDianFengjing = (j) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10)+5)*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 				start = null;
 				return getFenjing(j, data, data.city_name + '-' + data.ambiguity_sname).then(function(){
 					j++;
