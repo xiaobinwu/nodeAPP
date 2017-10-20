@@ -105,7 +105,7 @@ const fetchPage = (p, rn) => {
 
 			let loopCityExtraMessage = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
 				start = null;
 				return getSingleCityExtraMessage(data[l], request_id).then(function(){
 					l++;
@@ -184,7 +184,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 
 			let loopAttractionsCity = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
 				start = null;	
 				return getAttractionsCity(l, data).then(function(){
 					l++;
@@ -341,7 +341,7 @@ const getAttractionsCity = (p, data) => {
 
 				let loopSingleJingdianExtraMessage = (l) => {
 					let start = new Date();
-					while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
+					while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
 					start = null;
 					return getSingleJingdianExtraMessage(data[l]).then(function(){
 						l++;
@@ -410,7 +410,7 @@ const getSingleJingdianExtraMessage = (data) => {
 
 			let loopJingDianFengjing = (j) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
 				start = null;
 				return getFenjing(j, data, data.city_name + '-' + data.ambiguity_sname).then(function(){
 					j++;
@@ -445,7 +445,34 @@ global.db.once('open', function () {
 	console.log('Mongodb running');
 
 	// 获取北京－测试
-	fetchPage(c, rn)
+	// fetchPage(c, rn)
+
+	let loopAttractionsCity = (l) => {
+		let start = new Date();
+		while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+		start = null;	
+		return getAttractionsCity(l, {
+			city_name: '北京',
+			surl: 'beijing'
+		}).then(function(){
+			l++;
+			if(l <= 110){
+				return loopAttractionsCity(l);
+			} else{
+				console.log(data.city_name + '总共有' + 110 + '处景点下载完毕！');
+				AttractionsPages = null;
+				l = null;
+				loopAttractionsCity = null;
+				return Promise.resolve();
+			}
+		}).catch(function (err) {
+			return Promise.reject(err);
+		});
+	}
+
+	return loopAttractionsCity(10);
+
+
 
 	
 	// let CronJobTimer = new CronJob('0 */59 * * * *',function(){
