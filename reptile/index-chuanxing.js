@@ -21,8 +21,8 @@ const CronJob = require('cron').CronJob;
 // });
 
 // node性能监控 
-// const easyMonitor = require('easy-monitor');
-// easyMonitor('nodeAPP');
+const easyMonitor = require('easy-monitor');
+easyMonitor('nodeAPP');
 
 
 // 引入mongoose
@@ -449,7 +449,7 @@ global.db.once('open', function () {
 
 	let loopAttractionsCity = (l) => {
 		let start = new Date();
-		while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+		while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 		start = null;	
 		return getAttractionsCity(l, {
 			city_name: '北京',
