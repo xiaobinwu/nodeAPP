@@ -21,8 +21,8 @@ const CronJob = require('cron').CronJob;
 // });
 
 // node性能监控 
-const easyMonitor = require('easy-monitor');
-easyMonitor('nodeAPP');
+// const easyMonitor = require('easy-monitor');
+// easyMonitor('nodeAPP');
 
 
 // 引入mongoose
@@ -470,7 +470,7 @@ global.db.once('open', function () {
 		});
 	}
 
-	return loopAttractionsCity(10);
+	return loopAttractionsCity(96);
 
 
 
