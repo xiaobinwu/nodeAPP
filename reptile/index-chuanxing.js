@@ -3,28 +3,6 @@ const https = require('https');
 
 const rp = require('request-promise');
 
-const CronJob = require('cron').CronJob;
-
-// 检查内存泄漏(node版本不能用)
-// const memwatch = require('memwatch');
-// const heapdump = require('heapdump');
-// memwatch.on('leak', function(info) {
-// 	console.error(info);
-// 	const file = '/Library/Node/workspace/nodeAPP/rumrecord/' + process.pid + '-' + Date.now() + '.heapsnapshot';
-// 	heapdump.writeSnapshot(file, function(err){
-// 		if (err){
-// 			console.error(err);
-// 		}else{
-// 			console.error('Wrote snapshot: ' + file);
-// 		}
-// 	});
-// });
-
-// node性能监控 
-// const easyMonitor = require('easy-monitor');
-// easyMonitor('nodeAPP');
-
-
 // 引入mongoose
 let mongoose = require('mongoose');
 let Promise;
@@ -59,12 +37,13 @@ const httpRequest = (options, callback) => {
 /**
  * 获取城市列表
  * @param {number} p (城市列表页数)
+ * @param {number} rn (第几个）
  */
 const fetchPage = (p, rn) => {
 	console.log('第'+ p +'-'+ rn +'次抓取 nowTime:' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString())
 	let parsedData;
 	let options = {
-		uri: hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=' + rn,
+		uri: hostName + 'destination/ajax/jingdian?format=ajax&cid=0&playid=0&seasonid=5&surl=zhongguo&pn=' + p + '&rn=' + 18,
 		headers: {
 			'Connection': 'keep-alive',
 			'Host': 'lvyou.baidu.com',
@@ -77,56 +56,54 @@ const fetchPage = (p, rn) => {
 		const county = parsedData.data.ambiguity_sname;
 		const county_id = parsedData.data.cid;
 		const request_id = parsedData.data.request_id;
-		let finalDataArr = [];
-		parsedData.data.scene_list.forEach((item) => {
-			const finalData = {
-				county: county, // 国家名
-				county_id: county_id, // 国家id，后期可以多国家
-				city_id: item.cid, // 城市id
-				city_name: item.ambiguity_sname, // 城市名
-				en_sname: item.ext.en_sname, // 城市英文名
-				cover: item.cover.full_url, // 城市图片
-				surl: item.surl, // 城市标志，用于抓取对应城市景点
-				avg_cost: item.ext.avg_cost, // 人均花费
-				level: item.ext.level, //景区登记
-				avg_remark_score: item.ext.avg_remark_score, // 评分
-				remark_count: item.remark_count, // 点评数
-				impression: item.ext.impression, // 城市简述
-				more_desc: item.ext.more_desc, // 城市详述
-				abs_desc: item.ext.abs_desc,
-				map_info: item.ext.map_info // 坐标
-			}
-			finalDataArr.push(finalData);
-		});
+		const item = parsedData.data.scene_list[rn-1];
+		let finalData = {
+			county: county, // 国家名
+			county_id: county_id, // 国家id，后期可以多国家
+			city_id: item.cid, // 城市id
+			city_name: item.ambiguity_sname, // 城市名
+			en_sname: item.ext.en_sname, // 城市英文名
+			cover: item.cover.full_url, // 城市图片
+			surl: item.surl, // 城市标志，用于抓取对应城市景点
+			avg_cost: item.ext.avg_cost, // 人均花费
+			level: item.ext.level, //景区登记
+			avg_remark_score: item.ext.avg_remark_score, // 评分
+			remark_count: item.remark_count, // 点评数
+			impression: item.ext.impression, // 城市简述
+			more_desc: item.ext.more_desc, // 城市详述
+			abs_desc: item.ext.abs_desc,
+			map_info: item.ext.map_info // 坐标
+		}
 		parsedData = null;
-		return Citys.insertMany(finalDataArr).then(function(data){
-			finalDataArr = null;
-			console.log('第'+ p +'-'+ rn +'次基本数据保存成功');
+		const citys = new Citys(finalData);
+		return citys.save().then(function(data){
+			console.log(data)
+			console.log('第'+ p +'页-第'+ rn +'个（' + data.city_name + '）基本数据保存成功');
+			finalData = null;
+			// let loopCityExtraMessage = (l) => {
+			// 	let start = new Date();
+			// 	while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+			// 	start = null;
+			// 	return getSingleCityExtraMessage(data[l], request_id).then(function(){
+			// 		l++;
+			// 		if(l <= (data.length - 1)){
+			// 			return loopCityExtraMessage(l);
+			// 		} else{
+			// 			l = null;
+			// 			loopCityExtraMessage = null;
+			// 			return Promise.resolve();
+			// 		}
+			// 	}).catch(function (err) {
+			// 		return Promise.reject(err);
+			// 	});
+			// }
 
-			let loopCityExtraMessage = (l) => {
-				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
-				start = null;
-				return getSingleCityExtraMessage(data[l], request_id).then(function(){
-					l++;
-					if(l <= (data.length - 1)){
-						return loopCityExtraMessage(l);
-					} else{
-						l = null;
-						loopCityExtraMessage = null;
-						return Promise.resolve();
-					}
-				}).catch(function (err) {
-					return Promise.reject(err);
-				});
-			}
+			// return loopCityExtraMessage(0);
 
-			return loopCityExtraMessage(0);
-
-
+			return getSingleCityExtraMessage(data, request_id);
 
 		}).then(function(){
-			console.log('第'+ p +'-'+ rn +'次所有数据（城市数据、景点、景点风景图）保存成功');
+			console.log('第'+ p +'-'+ rn +'个所有数据（城市数据、景点、景点风景图）保存成功');
 			return Promise.resolve();
 		}).catch(function (err) {
 			return Promise.reject(err);
@@ -184,7 +161,7 @@ const getSingleCityExtraMessage = (data, request_id) => {
 
 			let loopAttractionsCity = (l) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10+2))*1000){}
 				start = null;	
 				return getAttractionsCity(l, data).then(function(){
 					l++;
@@ -341,7 +318,7 @@ const getAttractionsCity = (p, data) => {
 
 				let loopSingleJingdianExtraMessage = (l) => {
 					let start = new Date();
-					while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+					while(new Date() - start < (Math.floor(Math.random()*10+3))*1000){}
 					start = null;
 					return getSingleJingdianExtraMessage(data[l]).then(function(){
 						l++;
@@ -410,7 +387,7 @@ const getSingleJingdianExtraMessage = (data) => {
 
 			let loopJingDianFengjing = (j) => {
 				let start = new Date();
-				while(new Date() - start < (Math.floor(Math.random()*10+5))*1000){}
+				while(new Date() - start < (Math.floor(Math.random()*10+2))*1000){}
 				start = null;
 				return getFenjing(j, data, data.city_name + '-' + data.ambiguity_sname).then(function(){
 					j++;
@@ -438,28 +415,27 @@ const getSingleJingdianExtraMessage = (data) => {
 	});
 }
 
-
-global.db.once('open', function () {
-	let c = 1;
-	let rn = 1;
-	console.log('Mongodb running');
-
-	// 获取北京－测试
-	// fetchPage(c, rn)
-
+// 中断续爬
+/**
+ * p -页数
+ * city-城市信息， 如：
+ * {
+ * 		city_name: '北京',
+ * 		surl: 'beijing'
+ * }
+ * total-总数
+ */
+const carryData = (options) => {
 	let loopAttractionsCity = (l) => {
 		let start = new Date();
 		while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
 		start = null;	
-		return getAttractionsCity(l, {
-			city_name: '北京',
-			surl: 'beijing'
-		}).then(function(){
+		return getAttractionsCity(l, options.city).then(function(){
 			l++;
-			if(l <= 110){
+			if(l <= options.total){
 				return loopAttractionsCity(l);
 			} else{
-				console.log(data.city_name + '总共有' + 110 + '处景点下载完毕！');
+				console.log(data.city_name + '总共有' + options.total + '处景点下载完毕！');
 				AttractionsPages = null;
 				l = null;
 				loopAttractionsCity = null;
@@ -470,27 +446,12 @@ global.db.once('open', function () {
 		});
 	}
 
-	return loopAttractionsCity(96);
+	return loopAttractionsCity(options.p);
+}
 
-
-
+global.db.once('open', function () {
+	console.log('Mongodb running');
 	
-	// let CronJobTimer = new CronJob('0 */59 * * * *',function(){
-
-	// 	if(c > 1) { CronJobTimer.stop(); CronJobTimer = null; return; }
-
-	// 	fetchPage(c, rn).then(function(){
-	// 		if(rn >= 18){
-	// 			c++;
-	// 			rn = 1;
-	// 		} else{
-	// 			rn++;
-	// 		}
-	// 	}).catch(function(){
-	// 		return Promise.reject(err);
-	// 	})
-
-
-	// },null,true,null);
+	fetchPage(1, 2);
 
 });
