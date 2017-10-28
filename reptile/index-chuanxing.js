@@ -427,16 +427,15 @@ const getSingleJingdianExtraMessage = (data) => {
  */
 const carryData = (options) => {
 	let loopAttractionsCity = (l) => {
-		let start = new Date();
-		while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
-		start = null;	
+		// let start = new Date();
+		// while(new Date() - start < (Math.floor(Math.random()*10))*1000){}
+		// start = null;	
 		return getAttractionsCity(l, options.city).then(function(){
 			l++;
 			if(l <= options.total){
 				return loopAttractionsCity(l);
 			} else{
-				console.log(data.city_name + '总共有' + options.total + '处景点下载完毕！');
-				AttractionsPages = null;
+				console.log(options.city.city_name + '总共有' + options.total + '页景点下载完毕！');
 				l = null;
 				loopAttractionsCity = null;
 				return Promise.resolve();
@@ -452,6 +451,15 @@ const carryData = (options) => {
 global.db.once('open', function () {
 	console.log('Mongodb running');
 	
-	fetchPage(1, 2);
+	fetchPage(1, 7);
+
+	// carryData({
+	// 	p: 7,
+	// 	total: 17,
+	// 	city: {
+	// 		city_name: '厦门',
+	// 		surl: 'xiamen'
+	// 	}
+	// })
 
 });
