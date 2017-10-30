@@ -451,15 +451,15 @@ const carryData = (options) => {
 global.db.once('open', function () {
 	console.log('Mongodb running');
 	
-	fetchPage(1, 7);
+	// fetchPage(1, 10);
 
-	// carryData({
-	// 	p: 7,
-	// 	total: 42,
-	// 	city: {
-	// 		city_name: '杭州',
-	// 		surl: 'hangzhou'
-	// 	}
-	// })
+	carryData({
+		p: 13,
+		total: 19,
+		city: {
+			city_name: '西安',
+			surl: 'xian'
+		}
+	})
 
 });
