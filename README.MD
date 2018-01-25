@@ -133,3 +133,31 @@ global.db.once('open', function () {
 学习资料：
 
 ![Mongoose学习参考文档——基础篇](https://cnodejs.org/topic/504b4924e2b84515770103dd)
+
+## index-promise.js 与 index-async.js
+
+index-promise.js：promise实现爬虫程序，结果遇到了很多坑，首先Promise出现十分多的then函数，相当不美观，表示自己看自己写的代码都是晕头转向的...由先使用了很多闭包、柯里化函数，变量却没有及时地去销毁，结果导致爬虫前期总是导致内存泄露，没有使用es6语法，代码多而杂，没有很好的捕获错误机制（应该说是没有 ((٩(//̀Д/́/)۶))），所以爬取到一半断了，你都不知道因为什么原因断了，这样自然也不知道断掉时的正在抓哪个景点或是景点风景图，没有实现断点爬取，爬取中断，就只能手动重新开启爬取，数据会遗漏，总之，惨不忍睹，真是连看不想看...
+
+index-async.js: 若干月后，重新打开这个项目后，决定重整旗鼓，摒弃index-promise.js，重新写一个爬虫程序，于是就有了index-async.js，改用async与await、es6重写该文件，当然，是需要做些准备工作滴！
+
+
+查阅资料后得知，Node本身已经支持部分ES6语法，但是import export，以及async await(Node 8 已经支持)等一些语法，我们还是无法使用。为了能使用这些新特性，我们就需要使用babel把ES6转成ES5语法。以下是如何在node项目畅通无阻地使用es6语法。
+
+安装babel
+``` javascript
+    npm install babel-cli -g
+```
+
+`es2015`可以转码es6的语法规则，`stage-0`可以转码ES7语法(比如async await)，`preset-env`可以自动检测当前node版本，只转码node不支持的语法
+``` javascript
+    npm install --save-dev babel-preset-es2015  babel-preset-stage-0 babel-preset-env
+```
+
+package.json配置， 运行`npm run async`即可
+``` javascript
+    "scripts": {
+        ...
+        "async": "babel-node ./reptile/index-async.js"
+    }
+```
+
