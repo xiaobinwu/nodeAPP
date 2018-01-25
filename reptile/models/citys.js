@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const CitysSchema = require('../schemas/citys')
+import mongoose from 'mongoose'
+import CitysSchema from '../schemas/citys'
+
 const Citys = mongoose.model('Citys', CitysSchema)
 
-module.exports = Citys
+export default Citys

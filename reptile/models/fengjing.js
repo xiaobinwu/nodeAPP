@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const FengjingSchema = require('../schemas/fengjing')
+import mongoose from 'mongoose'
+import FengjingSchema from '../schemas/fengjing'
+
 const Fengjing = mongoose.model('Fengjing', FengjingSchema)
 
 Fengjing.on('error', function(error) {
@@ -8,10 +9,10 @@ Fengjing.on('error', function(error) {
 })
 
 // 手动创建索引
-Fengjing.ensureIndexes(function(err){
-    if(err){
+Fengjing.ensureIndexes(function(err) {
+    if (err) {
         console.log(err)
     }
 })
 
-module.exports = Fengjing
+export default Fengjing

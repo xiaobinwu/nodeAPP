@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const JingdianSchema = require('../schemas/jingdian')
+import mongoose from 'mongoose'
+import JingdianSchema from '../schemas/jingdian'
+
 const Jingdian = mongoose.model('Jingdian', JingdianSchema)
 
 Jingdian.on('error', function(error) {
@@ -8,10 +9,10 @@ Jingdian.on('error', function(error) {
 })
 
 // 手动创建索引
-Jingdian.ensureIndexes(function(err){
-    if(err){
+Jingdian.ensureIndexes(function(err) {
+    if (err) {
         console.log(err)
     }
 })
 
-module.exports = Jingdian
+export default Jingdian

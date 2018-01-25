@@ -1,5 +1,5 @@
 // 引入mongoose
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 // 旅游城市模型
 const Schema = mongoose.Schema
 const CitysSchema = new mongoose.Schema({
@@ -18,7 +18,7 @@ const CitysSchema = new mongoose.Schema({
     impression: String, // 城市简述
     abs_desc: String,
     more_desc: String, // 城市详述
-    map_info: String,// 坐标
+    map_info: String, // 坐标
     best_time: [], //适合游玩的时间
     best_time_more_desc: { type: String, default: '' }, //适合游玩的时间更多描述
     best_time_simple_desc: { type: String, default: '' }, //适合游玩的时间简单描述
@@ -30,4 +30,4 @@ const CitysSchema = new mongoose.Schema({
     updateTime: { type: Date, default: Date.now } //更新时间
 })
 
-module.exports = CitysSchema
+export default CitysSchema
