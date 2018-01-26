@@ -32,6 +32,8 @@ npm-debug.log
 
 /reptile/data/*
 /reptile/data-rar/*
+/reptile/log/*
+
 
 /data/*
 
