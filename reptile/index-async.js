@@ -14,6 +14,8 @@ const access = util.promisify(fs.access)
 const writeFile = util.promisify(fs.writeFile)
 const mkdir = util.promisify(fs.mkdir)
 
+<<
+<< << < HEAD
 //引入mongoose
 import mongoose from 'mongoose'
 let Promise;
@@ -24,7 +26,23 @@ mongoose.Promise = Promise = bluebird
 global.db = mongoose.connect('mongodb://localhost:27017/lvyou', {
     useMongoClient: true
 })
-global.db.on('error', console.error.bind(console, '连接错误:'))
+global.db.on('error', console.error.bind(console, '连接错误:')) ===
+    === =
+    console.log(access)
+
+// 引入mongoose
+// import mongoose from 'mongoose'
+// let Promise;
+// //开启日志
+// mongoose.set('debug', true);
+// // promise化
+// mongoose.Promise = Promise = bluebird
+// global.db = mongoose.connect('mongodb://localhost:27017/lvyou', {
+//     useMongoClient: true
+// })
+// global.db.on('error', console.error.bind(console, '连接错误:'))
+>>>
+>>> > 37 c91700221903682a482f87cd65d21d4cdc89eb
 
 
 import Fengjing from './models/fengjing'
